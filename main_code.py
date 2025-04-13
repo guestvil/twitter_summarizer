@@ -19,7 +19,11 @@ def login(playwright_page: Page, twitter_url: str, username: str, password: str)
     return None
 
 
-def get_twitter_info():
+def get_twitter_info(playwright_page: Page):
+    playwright_page.get_by_role('tab', name='Following').click()
+    # tuits = playwright_page.locator('[data-testid="tweet"]')
+    tuits = playwright_page.locator('[data-testid="cellInnerDiv"]')
+    print(tuits)
     return None
 
 
@@ -42,6 +46,7 @@ def main():
         browser = playwright.chromium.launch(headless=False, slow_mo=1000)
         page = browser.new_page()
         login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
+        get_twitter_info(playwright_page=page)
     return None
 
 
