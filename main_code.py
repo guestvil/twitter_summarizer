@@ -1,7 +1,7 @@
 from playwright.sync_api import sync_playwright, Page
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 def get_credentials():
     load_dotenv()
@@ -21,9 +21,21 @@ def login(playwright_page: Page, twitter_url: str, username: str, password: str)
 
 def get_twitter_info(playwright_page: Page):
     playwright_page.get_by_role('tab', name='Following').click()
+    playwright_page.mouse.wheel(0, 5000)
+    playwright_page.wait_for_timeout(5000)
     # tuits = playwright_page.locator('[data-testid="tweet"]')
-    tuits = playwright_page.locator('[data-testid="cellInnerDiv"]')
-    print(tuits)
+    # tuits = playwright_page.locator('[data-testid="cellInnerDiv"]')
+    # for tuits in playwright_page.locator('div.css-175oi2r.r-1adg3ll.r-1ny4l3l').all():
+      #  text += tuits.inner_text()
+    # tuits = playwright_page.get_by_role('Region', name='Your Home Timeline')
+    tuits = playwright_page.get_by_label('Timeline: Your Home Timeline')
+    text = tuits.inner_html()
+    info = tuits.inner_text()
+    print(tuits.all_inner_texts())
+    with open('html.txt', 'w', encoding='utf-8') as file:
+        file.write(text)
+    with open('text.txt', 'w', encoding='utf-8') as file:
+        file.write(info)
     return None
 
 
