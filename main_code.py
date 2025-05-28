@@ -2,6 +2,7 @@ from playwright.sync_api import sync_playwright, Page
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
+import re
 
 def get_credentials():
     load_dotenv()
@@ -31,7 +32,24 @@ def get_twitter_info(playwright_page: Page):
     tuits = playwright_page.get_by_label('Timeline: Your Home Timeline')
     text = tuits.inner_html()
     info = tuits.inner_text()
-    print(tuits.all_inner_texts())
+    list_text = info.split('\n')
+    cleaned_list_text = []
+    flag = False
+    for indexing in range(len(list_text)):
+        print(list_text[indexing])
+        print(list_text[indexing].startswith('@'))
+        print(list_text[indexing] == '·')
+        if list_text[indexing].startswith('@') and list_text[indexing+1] == '·':
+            print('FLAG SET TO TRUE -------------- ')
+            flag = True
+            indexing += 3
+            continue
+        while flag == True:
+            cleaned_list_text.append(list_text[indexing])
+            # TEMPORAL CODE JUST TO PREVENT IT FROM ADDING EVERYTHING TO THE LIST, DELETE TOMORROW
+            if list_text[indexing].startswith('@') and list_text[indexing+1] == '·':
+                break
+    print(cleaned_list_text)
     with open('html.txt', 'w', encoding='utf-8') as file:
         file.write(text)
     with open('text.txt', 'w', encoding='utf-8') as file:
