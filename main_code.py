@@ -27,9 +27,9 @@ def get_twitter_info(playwright_page: Page):
         playwright_page.get_by_role('tab', name=section).click()
         playwright_page.mouse.wheel(0, 5000)
         playwright_page.wait_for_timeout(5000)
-        playwright_page.get_by_role('button', name='Show more').click()
+        if playwright_page.get_by_role('button', name='Show more').is_visible:
 
-        #CODE_HERE_
+        #CODE_HERE
 
         # tuits = playwright_page.locator('[data-testid="tweet"]')
         # tuits = playwright_page.locator('[data-testid="cellInnerDiv"]')
