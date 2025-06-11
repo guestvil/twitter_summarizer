@@ -21,6 +21,7 @@ def login(playwright_page: Page, twitter_url: str, username: str, password: str)
     playwright_page.get_by_role('link', name='Sign in').click()
     playwright_page.get_by_role('textbox').fill(username)
     playwright_page.get_by_role('button', name='Next').click()
+    playwright_page.pause()
     playwright_page.get_by_role('textbox', name='Password').fill(password)
     playwright_page.get_by_role('button', name='Log in').click()
     return None
@@ -51,9 +52,8 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
             for clickable_tweets in feed_locator.get_by_role('link', name='Show more').all():
                 print('Show more tweet detected, opening...------------- \n')
                 clickable_tweets.click()
-                # When opened in a single window there can be only more than one instace of tweets because of the replies
-                for elements in playwright_page.locator('[data-testid="cellInnerDiv"]').all():
-                    print(elements.inner_text())
+                # When opened in a single window there can be  more than one instace of tweets because of the replies, so this store only the first one -the main tweet
+                print('Long tweet added:________________ \n', playwright_page.locator('[data-testid="cellInnerDiv"]').first.inner_text())
                 tweets.append(playwright_page.locator('[data-testid="cellInnerDiv"]').first.inner_text())
                 # Go back to the main feed, either by clicking 'close' for images or 'back' for text-only tweets
                 if playwright_page.get_by_role('button', name='Close').is_visible():
@@ -62,8 +62,8 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
                     playwright_page.get_by_role('button', name='Back').click()
             # Add the new loaded tweets to the list
             for each_tweet in playwright_page.locator('[data-testid="cellInnerDiv"]').all():
-                # Check that this tweet is not alrady stored in the list, as scrolling can change the tweet's index returned by the locator
-                if each_tweet.inner_text() in tweets:
+                # Check that this tweet is not alrady stored in the list, as scrolling can change the tweet's index returned by the locator. The "any" function will return true if the comparison in the generator returns True for any element
+                if any(each_tweet.inner_text()[:30] == sliced_tweet[:30] for sliced_tweet in tweets):
                     print('This tweet has been excluded: \n', each_tweet.inner_text())
                     continue
                 tweets.append(each_tweet.inner_text())
