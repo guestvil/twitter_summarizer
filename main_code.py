@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
 import re
+import json
 
 def get_credentials():
     load_dotenv()
@@ -36,6 +37,7 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
         name: name
         tweet: the_tweet_here}'''
     twitter_sections = ['For you', 'Following']
+    raw_info = {}
     twitter_info = []
     for section in twitter_sections:
         playwright_page.get_by_role('tab', name=section).click()
@@ -74,22 +76,18 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
             # Hard-coded limit to avoid an infinite cycle
             if scroll_counter > 20:
                 break
+        # Add all the tweets from the section into the list
+        raw_info[section] = tweets
 
-        #CODE_HERE
-
-        # tuits = playwright_page.locator('[data-testid="tweet"]')
-        # tuits = playwright_page.locator('[data-testid="cellInnerDiv"]')
-        # for tuits in playwright_page.locator('div.css-175oi2r.r-1adg3ll.r-1ny4l3l').all():
-        #  text += tuits.inner_text()
-        # tuits = playwright_page.get_by_role('Region', name='Your Home Timeline')
-        tuits = playwright_page.get_by_label('Timeline: Your Home Timeline')
-        # text = tuits.inner_html()
-        info = tuits.inner_text()
-        list_text = info.split('\n')
-        twitter_info.append(list_text)
-        with open('text.txt', 'w', encoding='utf-8') as file:
-            file.write(info)
-    return twitter_info
+        # tuits = playwright_page.get_by_label('Timeline: Your Home Timeline')
+        # info = tuits.inner_text()
+        # list_text = info.split('\n')
+        # twitter_info.append(list_text)
+        with open('raw_info.json', 'w', encoding='utf-8') as file:
+            json.dump(raw_info, file, ensure_ascii=False, indent=4)
+    # return twitter_info
+    print(raw_info)
+    return raw_info
 
 
 def clean_information(list_of_tuits: list):
