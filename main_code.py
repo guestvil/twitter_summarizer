@@ -32,10 +32,11 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
     '''playwright_page: an instance of a playwright page
     twwets_number: int, the number of tweets it's desired to scann
     
-    Returns: a list of dictionaries, each:
-        {username: @username
-        name: name
-        tweet: the_tweet_here}'''
+    Returns: a dictionary with 2 keys, each contaning the corresponding tweets from the feed: 
+    { 
+        "For you": [this is a tweet, this is another tweet]
+        "Following:" ["this is a tweet", "this is another tweet"]    
+    }'''
     twitter_sections = ['For you', 'Following']
     raw_info = {}
     twitter_info = []
@@ -90,24 +91,45 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
     return raw_info
 
 
-def clean_information(list_of_tuits: list):
-    cleaned_list_text = []  
+def temporal_dictionary(json_file_path: str):
+    '''Temporal function that will use the json file store locally and convert it back to a python dictionary to use it while developing the code. 
+    I don't want to run the code that often so that twitter dectects it and starts placing a captcha''' 
+    with open(json_file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file) 
+    return data
+
+def clean_information(dict_of_tuits: dict):
+    final_dictionary = {}
     flag = False
-    for indexing in range(len(list_of_tuits)):
-        print(list_of_tuits[indexing])
-        print(list_of_tuits[indexing].startswith('@'))
-        print(list_of_tuits[indexing] == '·')
-        if list_of_tuits[indexing].startswith('@') and list_of_tuits[indexing+1] == '·':
-            print('FLAG SET TO TRUE -------------- ')
-            flag = True
-            indexing += 3
-            continue
-        while flag == True:
-            cleaned_list_text.append(list_of_tuits[indexing])
-            # TEMPORAL CODE JUST TO PREVENT IT FROM ADDING EVERYTHING TO THE LIST, DELETE TOMORROW
-            if list_of_tuits[indexing].startswith('@') and list_of_tuits[indexing+1] == '·':
-                break
-    print(cleaned_list_text)
+    # This loop iterates over each of the list of strings, with each individual string being a tweet
+    for list_of_string_tuits in dict_of_tuits.values():
+        final_tweet = []
+        # Iterates over each individual string
+        for each_string in list_of_string_tuits:
+            # From each string a list is obtained unsing the \n as element separator
+            single_tuit_list = each_string.split('\n')
+            print(single_tuit_list)
+            # This dictonary will store the name, username and text from the tweet, to be later added to a list.
+            individual_tweet_dict = {}
+            for indexing in range(len(single_tuit_list)):
+                print(single_tuit_list[indexing])
+                print(single_tuit_list[indexing].startswith('@'))
+                print(single_tuit_list[indexing] == '·')
+                # An individual tweet can be identified when there is an @ followed by a dot
+                if single_tuit_list[indexing].startswith('@') and single_tuit_list[indexing+1] == '·':
+                    # The curren indexing is the handle and the previous one will be the nanme
+                    individual_tweet_dict['name'] = single_tuit_list[indexing-1]
+                    individual_tweet_dict['handle'] = single_tuit_list[indexing]
+                    print('FLAG SET TO TRUE -------------- ')
+                    flag = True
+                    indexing += 3
+                    continue
+                while flag == True:
+                    final_tweet.append(single_tuit_list[indexing])
+                    # TEMPORAL CODE JUST TO PREVENT IT FROM ADDING EVERYTHING TO THE LIST, DELETE TOMORROW
+                    if single_tuit_list[indexing].startswith('@') and single_tuit_list[indexing+1] == '·':
+                        break
+        print(final_tweet)
     return None
 
 
@@ -126,12 +148,15 @@ def send_report():
 def main():
     url = 'https://x.com'
     x_username, x_password = get_credentials()
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=False, slow_mo=1000)
-        page = browser.new_page()
-        login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
-        twitter_info = get_twitter_info(playwright_page=page, twwets_number=20)
-    print(twitter_info)
+    # with sync_playwright() as playwright:
+      #  browser = playwright.chromium.launch(headless=False, slow_mo=1000)
+       # page = browser.new_page()
+       #login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
+       # twitter_info = get_twitter_info(playwright_page=page, twwets_number=20)
+    twitter_info = temporal_dictionary('raw_info.json')
+   #  print('Raw information as follows: \n', twitter_info, '\n')
+    cleaned_info = clean_information(twitter_info)
+    print(cleaned_info)
     return None
 
 
