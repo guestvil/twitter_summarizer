@@ -111,26 +111,38 @@ def clean_information(dict_of_tuits: dict):
             print(single_tuit_list)
             # This dictonary will store the name, username and text from the tweet, to be later added to a list.
             individual_tweet_dict = {}
+            individual_tweet_content = []
             for indexing in range(len(single_tuit_list)):
                 print(single_tuit_list[indexing])
                 print(single_tuit_list[indexing].startswith('@'))
                 print(single_tuit_list[indexing] == '·')
-                # An individual tweet can be identified when there is an @ followed by a dot
+                # An individual tweet can be identified when there is an @ followed by a dot Why not use simply the second index? Because in reposts the second index IS NOT the username
                 if single_tuit_list[indexing].startswith('@') and single_tuit_list[indexing+1] == '·':
+                    # This marks the begining of the place in which we begin to store information and update the flag
+                    flag = True
+                    print('--------------- FLAG SET TO TRUE -------------- ')
                     # The curren indexing is the handle and the previous one will be the nanme
                     individual_tweet_dict['name'] = single_tuit_list[indexing-1]
                     individual_tweet_dict['handle'] = single_tuit_list[indexing]
-                    print('FLAG SET TO TRUE -------------- ')
-                    flag = True
+                    # From the handle index, the tweet's content will be 3 indexes ahead
                     indexing += 3
+                    # The tweet's content will be first stored as a list of strings, since some tweet's contents can have '\n' inside of them and hence concatenating and deleting some strings will be necessary
+                    individual_tweet_content.append(single_tuit_list[indexing])
+                    # Continue to the next item as the current one is already stored
                     continue
-                while flag == True:
-                    final_tweet.append(single_tuit_list[indexing])
-                    # TEMPORAL CODE JUST TO PREVENT IT FROM ADDING EVERYTHING TO THE LIST, DELETE TOMORROW
-                    if single_tuit_list[indexing].startswith('@') and single_tuit_list[indexing+1] == '·':
-                        break
+                # After the flag has been set to TRUE all is stored , since some tweet's contents can have '\n' inside of them
+                if flag == True:
+                    # Tweet ending is signaled by a string with only numbers and no longer than 4 characters, as reply or retweets counts larger than 1000 will be abreviated to 1K and longer or 1M for counts in the millions
+                    # Also, the index -4 elements should be different from 'Quote', as in many instances the quoted tweet will display its time as a single number that fulfills the aformentioned condition
+                    if len(single_tuit_list[indexing]<=4 and single_tuit_list[indexing][0].isdigit() == True) and single_tuit_list[indexing-4] != 'Quote':
+                        tweet_full_text = ' '.join(individual_tweet_content)
+                        individual_tweet_dict['content'] = tweet_full_text
+                        flag = False
+                        continue
+                    individual_tweet_content.append(single_tuit_list[indexing])
+                final_tweet.append(individual_tweet_dict)
         print(final_tweet)
-    return None
+    return final_tweet
 
 
 def llm_call():
