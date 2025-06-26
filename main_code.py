@@ -4,8 +4,9 @@ from google.genai import types
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
-import re
 import json
+import markdown2
+from fpdf import FPDF
 
 def get_credentials():
     load_dotenv()
@@ -179,20 +180,24 @@ def clean_information(dict_of_tuits: dict):
 def llm_call(twitter_dict: dict, system_instruction: str, key:str):
     '''Recieves the dictionary from clean information and parses it to google's LLM to create a summary in JSON format'''
     client = genai.Client(api_key=key)
-    response = client.models.generate_content_stream(
+    response = client.models.generate_content(
         model='gemini-2.5-flash',
         config= types.GenerateContentConfig(
             system_instruction = system_instruction
         ),
         contents = twitter_dict)
-    for words in response:
-        print(words.text, end='')
     return response.text
 
 
-def get_pdf_report():
+def get_pdf_report(llm_output_markdown:str):
+    # First transform the pure markdown formatting into html
+    html = markdown2.markdown(llm_output_markdown)
+    # Then export the code as a formatted pdf
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.write_html(html)
+    pdf.output('x_summary.pdf')
     return None
-
 
 def send_report():
     return None
@@ -215,6 +220,8 @@ def main():
         system_instrucions = file.read()
     cleaned_info_str = json.dumps(cleaned_info, ensure_ascii=False, indent=4)
     llm_output = llm_call(twitter_dict=cleaned_info_str, system_instruction=system_instrucions, key=google_key)
+    print(llm_output)
+    get_pdf_report(llm_output_markdown = llm_output)
     return None
 
 
