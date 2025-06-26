@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, Page
+from google import genai
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
