@@ -10,7 +10,8 @@ def get_credentials():
     load_dotenv()
     username = os.getenv('USERNAME')
     password = os.getenv('PASSWORD')
-    return username, password
+    google_key = os.getenv('GOOGLE_KEY')
+    return username, password, google_key
 
 
 def login(playwright_page: Page, twitter_url: str, username: str, password: str):
@@ -102,6 +103,31 @@ def temporal_dictionary(json_file_path: str):
 
 
 def clean_information(dict_of_tuits: dict):
+    '''Receives: a dictionary with 2 keys, each contaning the corresponding tweets from the feed: 
+    { 
+        "For you": [this is a tweet, this is another tweet]
+        "Following:" ["this is a tweet", "this is another tweet"]    
+    }
+    
+    Outputs: a dictonary in the form: 
+    {'For you': [
+                {'name': 'User name',
+                'handle': '@some_handle',
+                'content': 'this is tweet'},
+                
+                {'name': 'another user',
+                'handle': '@another_user',
+                'content': 'this is another tweet}
+                ...],
+
+    'Following': [{'name': 'User name',
+                'handle': '@some_handle',
+                'content': 'this is tweet'},
+
+                {'name': 'another user',
+                'handle': '@another_user',
+                'content': 'this is another tweet}
+                  ...]'''
     final_dictionary = {}
     flag = False
     # This loop iterates over each of the list of strings, with each individual string being a tweet
@@ -149,8 +175,13 @@ def clean_information(dict_of_tuits: dict):
     return final_dictionary
 
 
-def llm_call(twitter_dic: dict):
-    return None
+def llm_call(twitter_dic: dict, key:str):
+    '''Recieves the dictionary from clean information and parses it to google's LLM to create a summary in JSON format'''
+    client = genai.Client(api_key=key)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents = 'Explain what X -former Twitter is')
+    return response.text
 
 
 def get_pdf_report():
@@ -163,7 +194,7 @@ def send_report():
 
 def main():
     url = 'https://x.com'
-    x_username, x_password = get_credentials()
+    x_username, x_password, google_key = get_credentials()
     # with sync_playwright() as playwright:
       #  browser = playwright.chromium.launch(headless=False, slow_mo=1000)
        # page = browser.new_page()
@@ -172,10 +203,10 @@ def main():
     twitter_info = temporal_dictionary('raw_info.json')
    #  print('Raw information as follows: \n', twitter_info, '\n')
     cleaned_info = clean_information(twitter_info)
-    for keys, values in cleaned_info.items():
-        print(keys, '\n')
-        for dictionaries in values:
-            print(dictionaries)
+    # TRANSFORM THE CLEANED_INFO INTO A JSON FORMATTED STRING BEFORE PARSING TO LLM
+    # print(cleaned_info)
+    llm_output = llm_call(twitter_dic=cleaned_info, key=google_key)
+    print(llm_output)
     return None
 
 
