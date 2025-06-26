@@ -8,6 +8,7 @@ import json
 import markdown2
 from fpdf import FPDF
 
+
 def get_credentials():
     load_dotenv()
     username = os.getenv('USERNAME')
@@ -199,7 +200,9 @@ def get_pdf_report(llm_output_markdown:str):
     pdf.output('x_summary.pdf')
     return None
 
-def send_report():
+
+def send_report(pdf_path: str):
+    os.system(f'lpr {pdf_path}')
     return None
 
 
@@ -214,14 +217,19 @@ def main():
     twitter_info = temporal_dictionary('raw_info.json')
    #  print('Raw information as follows: \n', twitter_info, '\n')
     cleaned_info = clean_information(twitter_info)
-    # TRANSFORM THE CLEANED_INFO INTO A JSON FORMATTED STRING BEFORE PARSING TO LLM
     # print(cleaned_info)
+    # Retrieve the system instructions to be passed to the LLM
     with open('system_instructions.txt', 'r', encoding='utf-8') as file:
         system_instrucions = file.read()
+    # Transform the dictionary into a Json formatted string that can be sent to the LLM
     cleaned_info_str = json.dumps(cleaned_info, ensure_ascii=False, indent=4)
+    # Call the LLM and get the summary
     llm_output = llm_call(twitter_dict=cleaned_info_str, system_instruction=system_instrucions, key=google_key)
     print(llm_output)
+    # Transform the summary into a PDF file
     get_pdf_report(llm_output_markdown = llm_output)
+    # print the PDF file
+    send_report('x_summary.pdf')
     return None
 
 
