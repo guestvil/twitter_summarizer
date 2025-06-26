@@ -108,19 +108,19 @@ def clean_information(dict_of_tuits: dict):
         for each_string in list_of_string_tuits:
             # From each string a list is obtained unsing the \n as element separator
             single_tuit_list = each_string.split('\n')
-            print(single_tuit_list)
             # This dictonary will store the name, username and text from the tweet, to be later added to a list.
             individual_tweet_dict = {}
             individual_tweet_content = []
             for indexing in range(len(single_tuit_list)):
-                print(single_tuit_list[indexing])
-                print(single_tuit_list[indexing].startswith('@'))
-                print(single_tuit_list[indexing] == '·')
+                if single_tuit_list[indexing] == '':
+                    continue
+                # print(single_tuit_list[indexing])
+                # print(single_tuit_list[indexing].startswith('@'))
+                # print(single_tuit_list[indexing] == '·')
                 # An individual tweet can be identified when there is an @ followed by a dot Why not use simply the second index? Because in reposts the second index IS NOT the username
                 if single_tuit_list[indexing].startswith('@') and single_tuit_list[indexing+1] == '·':
                     # This marks the begining of the place in which we begin to store information and update the flag
                     flag = True
-                    print('--------------- FLAG SET TO TRUE -------------- ')
                     # The curren indexing is the handle and the previous one will be the nanme
                     individual_tweet_dict['name'] = single_tuit_list[indexing-1]
                     individual_tweet_dict['handle'] = single_tuit_list[indexing]
@@ -134,14 +134,14 @@ def clean_information(dict_of_tuits: dict):
                 if flag == True:
                     # Tweet ending is signaled by a string with only numbers and no longer than 4 characters, as reply or retweets counts larger than 1000 will be abreviated to 1K and longer or 1M for counts in the millions
                     # Also, the index -4 elements should be different from 'Quote', as in many instances the quoted tweet will display its time as a single number that fulfills the aformentioned condition
-                    if len(single_tuit_list[indexing]<=4 and single_tuit_list[indexing][0].isdigit() == True) and single_tuit_list[indexing-4] != 'Quote':
+                    if len(single_tuit_list[indexing])<=4 and single_tuit_list[indexing][0].isdigit() == True and single_tuit_list[indexing-4] != 'Quote':
                         tweet_full_text = ' '.join(individual_tweet_content)
                         individual_tweet_dict['content'] = tweet_full_text
                         flag = False
                         continue
                     individual_tweet_content.append(single_tuit_list[indexing])
+            if individual_tweet_dict != {}:
                 final_tweet.append(individual_tweet_dict)
-        print(final_tweet)
     return final_tweet
 
 
@@ -168,7 +168,8 @@ def main():
     twitter_info = temporal_dictionary('raw_info.json')
    #  print('Raw information as follows: \n', twitter_info, '\n')
     cleaned_info = clean_information(twitter_info)
-    print(cleaned_info)
+    for elements in cleaned_info:
+        print(elements, '\n')
     return None
 
 
