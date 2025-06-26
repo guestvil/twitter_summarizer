@@ -11,6 +11,7 @@ def get_credentials():
     password = os.getenv('PASSWORD')
     return username, password
 
+
 def login(playwright_page: Page, twitter_url: str, username: str, password: str):
     '''Playwright page: an instance of playwright page
     twitter_url: the twitter landing page
@@ -98,11 +99,12 @@ def temporal_dictionary(json_file_path: str):
         data = json.load(file) 
     return data
 
+
 def clean_information(dict_of_tuits: dict):
     final_dictionary = {}
     flag = False
     # This loop iterates over each of the list of strings, with each individual string being a tweet
-    for list_of_string_tuits in dict_of_tuits.values():
+    for key, list_of_string_tuits in dict_of_tuits.items():
         final_tweet = []
         # Iterates over each individual string
         for each_string in list_of_string_tuits:
@@ -142,10 +144,11 @@ def clean_information(dict_of_tuits: dict):
                     individual_tweet_content.append(single_tuit_list[indexing])
             if individual_tweet_dict != {}:
                 final_tweet.append(individual_tweet_dict)
-    return final_tweet
+        final_dictionary[key] = final_tweet
+    return final_dictionary
 
 
-def llm_call():
+def llm_call(twitter_dic: dict):
     return None
 
 
@@ -168,8 +171,10 @@ def main():
     twitter_info = temporal_dictionary('raw_info.json')
    #  print('Raw information as follows: \n', twitter_info, '\n')
     cleaned_info = clean_information(twitter_info)
-    for elements in cleaned_info:
-        print(elements, '\n')
+    for keys, values in cleaned_info.items():
+        print(keys, '\n')
+        for dictionaries in values:
+            print(dictionaries)
     return None
 
 
