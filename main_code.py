@@ -1,5 +1,6 @@
 from playwright.sync_api import sync_playwright, Page
 from google import genai
+from google.genai import types
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
@@ -175,12 +176,17 @@ def clean_information(dict_of_tuits: dict):
     return final_dictionary
 
 
-def llm_call(twitter_dic: dict, key:str):
+def llm_call(twitter_dict: dict, system_instruction: str, key:str):
     '''Recieves the dictionary from clean information and parses it to google's LLM to create a summary in JSON format'''
     client = genai.Client(api_key=key)
-    response = client.models.generate_content(
+    response = client.models.generate_content_stream(
         model='gemini-2.5-flash',
-        contents = 'Explain what X -former Twitter is')
+        config= types.GenerateContentConfig(
+            system_instruction = system_instruction
+        ),
+        contents = twitter_dict)
+    for words in response:
+        print(words.text, end='')
     return response.text
 
 
@@ -205,8 +211,10 @@ def main():
     cleaned_info = clean_information(twitter_info)
     # TRANSFORM THE CLEANED_INFO INTO A JSON FORMATTED STRING BEFORE PARSING TO LLM
     # print(cleaned_info)
-    llm_output = llm_call(twitter_dic=cleaned_info, key=google_key)
-    print(llm_output)
+    with open('system_instructions.txt', 'r', encoding='utf-8') as file:
+        system_instrucions = file.read()
+    cleaned_info_str = json.dumps(cleaned_info, ensure_ascii=False, indent=4)
+    llm_output = llm_call(twitter_dict=cleaned_info_str, system_instruction=system_instrucions, key=google_key)
     return None
 
 
