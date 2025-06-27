@@ -1,7 +1,6 @@
 from playwright.sync_api import sync_playwright, Page
 from google import genai
 from google.genai import types
-from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
 import json
@@ -24,11 +23,13 @@ def login(playwright_page: Page, twitter_url: str, username: str, password: str)
     password: tw password
 
     Returns: nothing, it just makes playwright log into twitter'''
+    print('Login into X...')
     playwright_page.goto(twitter_url)
     playwright_page.get_by_role('link', name='Sign in').click()
     playwright_page.get_by_role('textbox').fill(username)
     playwright_page.get_by_role('button', name='Next').click()
-    playwright_page.pause()
+    # If you hit X servers to often it will ask you to solve a captcha, this is easily solvable but I'm not getting paid for this
+    # playwright_page.pause()
     playwright_page.get_by_role('textbox', name='Password').fill(password)
     playwright_page.get_by_role('button', name='Log in').click()
     return None
@@ -43,6 +44,7 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
         "For you": [this is a tweet, this is another tweet]
         "Following:" ["this is a tweet", "this is another tweet"]    
     }'''
+    print('Getting individual tweets information...')
     twitter_sections = ['For you', 'Following']
     raw_info = {}
     twitter_info = []
@@ -59,10 +61,8 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
             # if feed_locator.get_by_role('link', name='Show more').is_visible():
             # This method is better than using .is_visible(), as it is strict-mode violation proof: 
             for clickable_tweets in feed_locator.get_by_role('link', name='Show more').all():
-                print('Show more tweet detected, opening...------------- \n')
                 clickable_tweets.click()
                 # When opened in a single window there can be  more than one instace of tweets because of the replies, so this store only the first one -the main tweet
-                print('Long tweet added:________________ \n', playwright_page.locator('[data-testid="cellInnerDiv"]').first.inner_text())
                 tweets.append(playwright_page.locator('[data-testid="cellInnerDiv"]').first.inner_text())
                 # Go back to the main feed, either by clicking 'close' for images or 'back' for text-only tweets
                 if playwright_page.get_by_role('button', name='Close').is_visible():
@@ -73,10 +73,10 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
             for each_tweet in playwright_page.locator('[data-testid="cellInnerDiv"]').all():
                 # Check that this tweet is not alrady stored in the list, as scrolling can change the tweet's index returned by the locator. The "any" function will return true if the comparison in the generator returns True for any element
                 if any(each_tweet.inner_text()[:30] == sliced_tweet[:30] for sliced_tweet in tweets):
-                    print('This tweet has been excluded: \n', each_tweet.inner_text())
+                    print('This tweet was found twice \n', each_tweet.inner_text(), '\n')
                     continue
                 tweets.append(each_tweet.inner_text())
-            print('----------------- END_OF_A_SINGLE_BACH_OF_TWEETS----------------\n')
+                print('Tweet added: \n', each_tweet.inner_text(), '\n')
             # Scroll 5000 pixels if the number of tweets is not met yet
             playwright_page.mouse.wheel(0, 5000)
             playwright_page.wait_for_timeout(5000)
@@ -85,15 +85,10 @@ def get_twitter_info(playwright_page: Page, twwets_number: int):
                 break
         # Add all the tweets from the section into the list
         raw_info[section] = tweets
-
-        # tuits = playwright_page.get_by_label('Timeline: Your Home Timeline')
-        # info = tuits.inner_text()
-        # list_text = info.split('\n')
-        # twitter_info.append(list_text)
+        # Store the info as a json file in case testing is needed without launching playwright
         with open('raw_info.json', 'w', encoding='utf-8') as file:
             json.dump(raw_info, file, ensure_ascii=False, indent=4)
     # return twitter_info
-    print(raw_info)
     return raw_info
 
 
@@ -131,6 +126,7 @@ def clean_information(dict_of_tuits: dict):
                 'handle': '@another_user',
                 'content': 'this is another tweet}
                   ...]'''
+    print('\n Creating dictionary for LLM... \n')
     final_dictionary = {}
     flag = False
     # This loop iterates over each of the list of strings, with each individual string being a tweet
@@ -180,6 +176,7 @@ def clean_information(dict_of_tuits: dict):
 
 def llm_call(twitter_dict: dict, system_instruction: str, key:str):
     '''Recieves the dictionary from clean information and parses it to google's LLM to create a summary in JSON format'''
+    print('\n Calling LLM... \n')
     client = genai.Client(api_key=key)
     response = client.models.generate_content(
         model='gemini-2.5-flash',
@@ -192,6 +189,7 @@ def llm_call(twitter_dict: dict, system_instruction: str, key:str):
 
 def get_pdf_report(llm_output_markdown:str):
     # First transform the pure markdown formatting into html
+    print('\n Creating PDF report... \n')
     html = markdown2.markdown(llm_output_markdown)
     # Then export the code as a formatted pdf
     pdf = FPDF()
@@ -202,6 +200,7 @@ def get_pdf_report(llm_output_markdown:str):
 
 
 def send_report(pdf_path: str):
+    print('\n Printing report... \n')
     os.system(f'lpr {pdf_path}')
     return None
 
@@ -209,15 +208,14 @@ def send_report(pdf_path: str):
 def main():
     url = 'https://x.com'
     x_username, x_password, google_key = get_credentials()
-    # with sync_playwright() as playwright:
-      #  browser = playwright.chromium.launch(headless=False, slow_mo=1000)
-       # page = browser.new_page()
-       #login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
-       # twitter_info = get_twitter_info(playwright_page=page, twwets_number=20)
-    twitter_info = temporal_dictionary('raw_info.json')
-   #  print('Raw information as follows: \n', twitter_info, '\n')
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=False, slow_mo=1000)
+        page = browser.new_page()
+        login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
+        twitter_info = get_twitter_info(playwright_page=page, twwets_number=20)
+    # Temporal json file to use instead of twitter info, to test the function without launching playwright 
+    # twitter_info = temporal_dictionary('raw_info.json')
     cleaned_info = clean_information(twitter_info)
-    # print(cleaned_info)
     # Retrieve the system instructions to be passed to the LLM
     with open('system_instructions.txt', 'r', encoding='utf-8') as file:
         system_instrucions = file.read()
@@ -225,7 +223,7 @@ def main():
     cleaned_info_str = json.dumps(cleaned_info, ensure_ascii=False, indent=4)
     # Call the LLM and get the summary
     llm_output = llm_call(twitter_dict=cleaned_info_str, system_instruction=system_instrucions, key=google_key)
-    print(llm_output)
+    print('LLM output: \n', llm_output)
     # Transform the summary into a PDF file
     get_pdf_report(llm_output_markdown = llm_output)
     # print the PDF file
