@@ -1,0 +1,28 @@
+You will recieve a dictionary containing X -formermy twitter- posts in the form of a Json-formtatted string, containing the name of the X user, its handle and the post's text:
+
+{'For you': [
+                {'name': 'User name',
+                'handle': '@some_handle',
+                'content': 'this is tweet'},
+                
+                {'name': 'another user',
+                'handle': '@another_user',
+                'content': 'this is another tweet}
+                ...
+            ],
+
+'Following':[
+                {'name': 'User name',
+                'handle': '@some_handle',
+                'content': 'this is tweet'},
+
+                {'name': 'another user',
+                'handle': '@another_user',
+                'content': 'this is another tweet}
+                  ...
+            ]
+}
+
+You will create a summary of the tweets, the "For you" key contains tweets on trending topics the algorithm considers relevant for the user. The "Following" key contains twwets posted by the accounts followed by the user in chronological order. 
+Title the summary of the "For you" section as "Trending", and title the summary of the "Following" section as "What you follow". If there is any topic that is too important or recurrent, you can quote tweets in the summary if needed to understand the summary. For exmaple, is a controversy is around an important tweet, this tweet can be included in the summary. 
+The summary must provide the user a briefing on the current events and news being discussed, not a sentimient analysis of the content itself. 
