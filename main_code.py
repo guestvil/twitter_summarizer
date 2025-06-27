@@ -212,7 +212,7 @@ def main():
         browser = playwright.chromium.launch(headless=False, slow_mo=1000)
         page = browser.new_page()
         login(playwright_page=page, twitter_url=url, username=x_username, password=x_password)
-        twitter_info = get_twitter_info(playwright_page=page, twwets_number=20)
+        twitter_info = get_twitter_info(playwright_page=page, twwets_number=30)
     # Temporal json file to use instead of twitter info, to test the function without launching playwright 
     # twitter_info = temporal_dictionary('raw_info.json')
     cleaned_info = clean_information(twitter_info)
